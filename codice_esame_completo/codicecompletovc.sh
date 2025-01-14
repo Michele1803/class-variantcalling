@@ -1,14 +1,23 @@
-## clone repository
-cd /workspaces/class-variantcalling
+pwd
+
+ls -l
+
+cd datiesame
+
+ls -l
+
+mkdir -p rawdata
+
+tar -xzvf data_resequencing.tar.gz -C rawdata
+
+cd ..
+
 mkdir -p analysis
+
 cd analysis
 
-## sym link so we do not change the repository itself
-mkdir -p raw_data
-cd raw_data
-ln -s /workspaces/class-variantcalling/datasets-class-variantcalling/reads/*.gz .
-cd ..
 mkdir -p alignment
+
 cd alignment
 
 ## now we can perform the alignment with BWA
@@ -16,20 +25,20 @@ cd alignment
 bwa mem \
 -t 2 \
 -R "@RG\tID:sim\tSM:normal\tPL:illumina\tLB:sim" \
-/workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-/workspaces/class-variantcalling/analysis/raw_data/normal_1.000+disease_0.000_1.fq.gz \
-/workspaces/class-variantcalling/analysis/raw_data/normal_1.000+disease_0.000_2.fq.gz \
-| samtools view -@ 8 -bhS -o normal.bam -
+/workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+/workspaces/datiesame/rawdata/normal_1.000+disease_0.000_1.fq.gz \
+/workspaces/datiesame/rawdata/normal_1.000+disease_0.000_2.fq.gz \
+| samtools view -@ 2 -bhS -o normal.bam -
 
 ## Real time: 176.099 sec; CPU: 256.669 sec
 
 bwa mem \
 -t 2 \
 -R "@RG\tID:sim\tSM:disease\tPL:illumina\tLB:sim" \
-/workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-/workspaces/class-variantcalling/analysis/raw_data/normal_0.000+disease_1.000_1.fq.gz \
-/workspaces/class-variantcalling/analysis/raw_data/normal_0.000+disease_1.000_2.fq.gz \
-| samtools view -@ 8 -bhS -o disease.bam -
+/workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+/workspaces/datiesame/rawdata/normal_0.000+disease_1.000_1.fq.gz \
+/workspaces/datiesame/rawdata/normal_0.000+disease_1.000_2.fq.gz \
+| samtools view -@ 2 -bhS -o disease.bam -
 
 ## Real time: 173.232 sec; CPU: 256.204 sec
 
@@ -60,55 +69,54 @@ gatk MarkDuplicates \
 
 gatk BaseRecalibrator \
    -I normal_md.bam \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   --known-sites /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
-   --known-sites /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
+   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
    -O normal_recal_data.table
 
 gatk BaseRecalibrator \
    -I disease_md.bam \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   --known-sites /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
-   --known-sites /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
+   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
    -O disease_recal_data.table
 
 
 #### Apply recalibration
 
 gatk ApplyBQSR \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -I normal_md.bam \
    --bqsr-recal-file normal_recal_data.table \
    -O normal_recal.bam
 
 gatk ApplyBQSR \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -I disease_md.bam \
    --bqsr-recal-file disease_recal_data.table \
    -O disease_recal.bam
 
 
-tar -zvcf alignments.tar.gz *_recal.b*
-
-
 ### variant calling
 
-cd /workspaces/class-variantcalling
-mkdir -p analysis/variants
-cd analysis/variants
+cd ..
+
+mkdir -p variants
+
+cd variants
 
 
 ## first single sample discovery
 
 gatk --java-options "-Xmx4g" HaplotypeCaller  \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -I /workspaces/class-variantcalling/analysis/alignment/normal_recal.bam \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -I /workspaces/datiesame/analysis/alignment/normal_recal.bam \
    -O normal.g.vcf.gz \
    -ERC GVCF
 
 gatk --java-options "-Xmx4g" HaplotypeCaller  \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -I /workspaces/class-variantcalling/analysis/alignment/disease_recal.bam \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -I /workspaces/datiesame/analysis/alignment/disease_recal.bam \
    -O disease.g.vcf.gz \
    -ERC GVCF
 
@@ -121,14 +129,14 @@ mkdir -p tmp
 gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
       -V normal.g.vcf.gz \
       -V disease.g.vcf.gz \
-      --genomicsdb-workspace-path compared_db \
-      --tmp-dir /workspaces/class-variantcalling/analysis/variants/tmp \
+      --genomicsdb-workspace-path compared_db \   
+      --tmp-dir /workspaces/datiesame/analysis/variants/tmp \
       -L chr21
 
 ### on ARM64 (Mac M1 chip) this code
 ## combine the files into one
  gatk CombineGVCFs \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -V normal.g.vcf.gz \
    -V disease.g.vcf.gz \
    -O cohort.g.vcf.gz
@@ -136,9 +144,9 @@ gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
 ### on AMD64 this code ######
 ### finally we can call the genotypes jointly
 gatk --java-options "-Xmx4g" GenotypeGVCFs \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -V gendb://compared_db \
-   --dbsnp /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
+   --dbsnp /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
    -O results.vcf.gz
 
 
@@ -146,22 +154,23 @@ gatk --java-options "-Xmx4g" GenotypeGVCFs \
 ### on ARM64 (Mac M1 chip) this code
 ### finally we can call the genotypes jointly
 gatk --java-options "-Xmx4g" GenotypeGVCFs \
-   -R /workspaces/class-variantcalling/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -V cohort.g.vcf.gz \
-   --dbsnp /workspaces/class-variantcalling/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
+   --dbsnp /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
    -O results.vcf.gz
 
    
 #### ANNOTATE THE SAMPLE
 
-mkdir -p /workspaces/class-variantcalling/analysis/variants/cache
-cd /workspaces/class-variantcalling/analysis/variants
+mkdir -p cache
+
+#fare pwd per essere sicuri a questo punto di essere nella cartella variants
 
 ## download hg38 (UCSC) version of database
-snpEff download -v hg38 -dataDir /workspaces/class-variantcalling/analysis/variants/cache
+snpEff download -v hg38 -dataDir /workspaces/datiesame/analysis/variants/cache
 
 ### to execute snpeff we need to contain the memory
-snpEff -Xmx4g ann -dataDir /workspaces/class-variantcalling/analysis/variants/cache -v hg38 results.vcf.gz >results_ann.vcf
+snpEff -Xmx4g ann -dataDir /workspaces/datiesame/analysis/variants/cache -v hg38 results.vcf.gz >results_ann.vcf
 
 
 ### filter variants
