@@ -94,13 +94,13 @@ gatk BaseRecalibrator \
 #### Apply recalibration
 
 gatk ApplyBQSR \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -I normal_md.bam \
    --bqsr-recal-file normal_recal_data.table \
    -O normal_recal.bam
 
 gatk ApplyBQSR \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -I disease_md.bam \
    --bqsr-recal-file disease_recal_data.table \
    -O disease_recal.bam
@@ -118,14 +118,14 @@ cd variants
 ## first single sample discovery
 
 gatk --java-options "-Xmx4g" HaplotypeCaller  \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -I /workspaces/datiesame/analysis/alignment/normal_recal.bam \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -I /config/workspace/class-variantcalling/analysis/alignment/normal_recal.bam \
    -O normal.g.vcf.gz \
    -ERC GVCF
 
 gatk --java-options "-Xmx4g" HaplotypeCaller  \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -I /workspaces/datiesame/analysis/alignment/disease_recal.bam \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -I /config/workspace/class-variantcalling/analysis/alignment/disease_recal.bam \
    -O disease.g.vcf.gz \
    -ERC GVCF
 
@@ -139,47 +139,26 @@ gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
       -V normal.g.vcf.gz \
       -V disease.g.vcf.gz \
       --genomicsdb-workspace-path compared_db \   
-      --tmp-dir /workspaces/datiesame/analysis/variants/tmp \
+      --tmp-dir /config/workspace/class-variantcalling/analysis/variants/tmp \
       -L chr21
 
-### on ARM64 (Mac M1 chip) this code
-## combine the files into one
- gatk CombineGVCFs \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -V normal.g.vcf.gz \
-   -V disease.g.vcf.gz \
-   -O cohort.g.vcf.gz
 
 ### on AMD64 this code ######
 ### finally we can call the genotypes jointly
 gatk --java-options "-Xmx4g" GenotypeGVCFs \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
    -V gendb://compared_db \
-   --dbsnp /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
+   --dbsnp /config/workspace/datiesame/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
    -O results.vcf.gz
 
 
-
-### on ARM64 (Mac M1 chip) this code
-### finally we can call the genotypes jointly
-gatk --java-options "-Xmx4g" GenotypeGVCFs \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   -V cohort.g.vcf.gz \
-   --dbsnp /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_146.hg38_chr21.vcf.gz \
-   -O results.vcf.gz
-
-   
 #### ANNOTATE THE SAMPLE
-
-mkdir -p cache
 
 #fare pwd per essere sicuri a questo punto di essere nella cartella variants
 
-## download hg38 (UCSC) version of database
-snpEff download -v hg38 -dataDir /workspaces/datiesame/analysis/variants/cache
 
 ### to execute snpeff we need to contain the memory
-snpEff -Xmx4g ann -dataDir /workspaces/datiesame/analysis/variants/cache -v hg38 results.vcf.gz >results_ann.vcf
+snpEff -Xmx4g ann -dataDir /config/workspace/snpeff_data -v hg38 results.vcf.gz >results_ann.vcf
 
 
 ### filter variants
@@ -191,6 +170,8 @@ cat results_ann.vcf | grep HIGH | perl -nae 'if($F[10]=~/0\/0/ && $F[9]=~/1\/1/)
 cat results_ann.vcf | grep HIGH | perl -nae 'if($F[10]=~/0\/0/ && $F[9]=~/0\/1/){print $_;}' >>filtered_variants.vcf
 
 sudo conda install bioconda::snpsift
+
+#la password per bioconda è student
 
 SnpSift extractFields \
 -s "," -e "." \
