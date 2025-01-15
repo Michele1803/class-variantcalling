@@ -17,6 +17,7 @@ cd /config/workspace/datiesame
 
 tar -xzvf data_resequencing.tar.gz -C /config/workspace/class-variantcalling/analysis/raw_data
 
+#per ottenere il path corretto di raw_data cliccare con tasto destro su rawdata
 #al posto del comando sopra riportato possiamo fare solo tar -xzvf data_resequencing.tar.gz e poi spostare manualmente i campioni
 
 cd ..
