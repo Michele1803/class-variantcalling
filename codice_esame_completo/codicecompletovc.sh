@@ -23,13 +23,12 @@ cd ..
 
 cd class-variantcalling/analysis
 
-cd analysis
-
 mkdir -p alignment
 
 cd alignment
 
 ## now we can perform the alignment with BWA
+##i nomi dei campioni, dopo raw_data, potrebbero cambiare all'esame
 
 bwa mem \
 -t 2 \
