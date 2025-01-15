@@ -1,18 +1,27 @@
 pwd
+# /config/workspace
 
-ls -l
+mkdir -p class-variantcalling
 
-cd datiesame
+cd class-variantcalling
 
-ls -l
+mkdir -p analysis
+
+cd analysis
 
 mkdir -p rawdata
 
-tar -xzvf data_resequencing.tar.gz -C rawdata
+cd raw_data
+
+cd /config/workspace/datiesame
+
+tar -xzvf data_resequencing.tar.gz -C /config/workspace/class-variantcalling/analysis/raw_data
+
+#al posto del comando sopra riportato possiamo fare solo tar -xzvf data_resequencing.tar.gz e poi spostare manualmente i campioni
 
 cd ..
 
-mkdir -p analysis
+cd class-variantcalling/analysis
 
 cd analysis
 
@@ -25,9 +34,9 @@ cd alignment
 bwa mem \
 -t 2 \
 -R "@RG\tID:sim\tSM:normal\tPL:illumina\tLB:sim" \
-/workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-/workspaces/datiesame/rawdata/normal_1.000+disease_0.000_1.fq.gz \
-/workspaces/datiesame/rawdata/normal_1.000+disease_0.000_2.fq.gz \
+/config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+/config/workspace/class-variantcalling/analysis/raw_data/normal_1.000+disease_0.000_1.fq.gz \
+/config/workspace/class-variantcalling/analysis/raw-data/normal_1.000+disease_0.000_2.fq.gz \
 | samtools view -@ 2 -bhS -o normal.bam -
 
 ## Real time: 176.099 sec; CPU: 256.669 sec
@@ -35,9 +44,9 @@ bwa mem \
 bwa mem \
 -t 2 \
 -R "@RG\tID:sim\tSM:disease\tPL:illumina\tLB:sim" \
-/workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-/workspaces/datiesame/rawdata/normal_0.000+disease_1.000_1.fq.gz \
-/workspaces/datiesame/rawdata/normal_0.000+disease_1.000_2.fq.gz \
+/config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+/config/workspace/class-variantcalling/analysis/raw_data/normal_0.000+disease_1.000_1.fq.gz \
+/config/workspace/class-variantcalling/analysis/raw_data/normal_0.000+disease_1.000_2.fq.gz \
 | samtools view -@ 2 -bhS -o disease.bam -
 
 ## Real time: 173.232 sec; CPU: 256.204 sec
@@ -69,16 +78,16 @@ gatk MarkDuplicates \
 
 gatk BaseRecalibrator \
    -I normal_md.bam \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
-   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   --known-sites /config/workspace/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
+   --known-sites /config/workspace/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
    -O normal_recal_data.table
 
 gatk BaseRecalibrator \
    -I disease_md.bam \
-   -R /workspaces/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
-   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
-   --known-sites /workspaces/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
+   -R /config/workspace/datiesame/datasets_reference_only/sequence/Homo_sapiens_assembly38_chr21.fasta \
+   --known-sites /config/workspace/datiesame/datasets_reference_only/gatkbundle/dbsnp_144.hg38_chr21.vcf.gz \
+   --known-sites /config/workspace/datiesame/datasets_reference_only/gatkbundle/Mills_and_1000G_gold_standard.indels.hg38_chr21.vcf.gz \
    -O disease_recal_data.table
 
 
