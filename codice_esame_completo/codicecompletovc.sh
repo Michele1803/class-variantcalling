@@ -9,7 +9,7 @@ mkdir -p analysis
 
 cd analysis
 
-mkdir -p rawdata
+mkdir -p raw_data
 
 cd raw_data
 
